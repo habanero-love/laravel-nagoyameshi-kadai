@@ -21,10 +21,10 @@ class UserController extends Controller
             $users = null;
             $total = "";
         }
-        return view('admin.index',compact('keyword','users','total'));
+        return view('admin.users.index',compact('keyword','users','total'));
     }
     public function show() {
         $user = User::all();
-        return view('admin.show',compact('user'));
+        return view('admin.users.show',compact('user'));
     }
 }

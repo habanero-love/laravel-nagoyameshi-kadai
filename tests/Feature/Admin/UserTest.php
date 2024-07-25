@@ -40,9 +40,9 @@ class UserTest extends TestCase
             'email' => $admin->email,
             'password' => 'nagoyameshi',
         ]);
-
-        $this->assertTrue(Auth::guard('admin')->check());
-        $response->assertRedirect(RouteServiceProvider::ADMIN_HOME);
+        $response = $this
+            ->get(route('admin.index'));
+        $response->assertStatus(200);
     }
 
     public function test_未ログインのユーザーは管理者側の会員詳細ページにアクセスできない()

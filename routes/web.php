@@ -20,8 +20,8 @@ Route::get('/', function () {
 
 require __DIR__.'/auth.php';
 
-Route::group(['prefix' => 'admin', 'as' => 'admin.', 'middleware' => 'auth:admin'], function () {
-    Route::get('home', [Admin\HomeController::class, 'index'])->name('home');
-    Route::get('index', [Admin\UserController::class, 'index'])->name('index');
-    Route::post('show', [Admin\UserController::class, 'show'])->name('show');
+Route::group(['prefix' => '/admin', 'as' => 'admin.', 'name'=>'admin.', 'middleware' => 'auth:admin'], function () {
+    Route::get('/home', [Admin\HomeController::class, 'index'])->name('home');
+    Route::get('/index', [Admin\UserController::class, 'index'])->name('index');
+    Route::get('/show', [Admin\UserController::class, 'show'])->name('show');
 });
