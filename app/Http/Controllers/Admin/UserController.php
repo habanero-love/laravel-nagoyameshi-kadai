@@ -8,23 +8,22 @@ use App\Models\User;
 
 class UserController extends Controller
 {
-    public function index(Request $request) {
+    public function index(Request $request)
+    {
         $keyword = $request->keyword;
 
         if ($keyword !== null) {
-             $users = User::where([
-                ['name', 'like', "%{$keyword}%"],
-                ['kana', 'like', "%{$keyword}%"],
-             ])->get();
-             $total = $users->total();
+            $users = User::where('name', 'like', "%{$keyword}%")->orWhere('kana', 'like', "%{$keyword}%")->paginate(15);
+            $total = User::where('name', 'like', "%{$keyword}%")->orWhere('kana', 'like', "%{$keyword}%")->count();
         } else {
-            $users = null;
-            $total = "";
+            $users = User::paginate(15);
+            $total = 0;
         }
-        return view('admin.users.index',compact('keyword','users','total'));
+        return view('admin.users.index', compact('keyword', 'users', 'total'));
     }
-    public function show() {
-        $user = User::all();
-        return view('admin.users.show',compact('user'));
+    public function show($id)
+    {
+        $user = User::find($id);
+        return view('admin.users.show', compact('user'));
     }
 }

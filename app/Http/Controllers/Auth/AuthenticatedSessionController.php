@@ -17,7 +17,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function create(): View
     {
-        return view('admin.auth.login');
+        return view('auth.login');
     }
 
     /**
@@ -29,7 +29,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(RouteServiceProvider::ADMIN_HOME);
+        return redirect()->intended(RouteServiceProvider::HOME);
     }
 
     /**
@@ -37,7 +37,7 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        Auth::guard('admin')->logout();
+        Auth::guard('web')->logout();
 
         $request->session()->invalidate();
 

@@ -33,8 +33,6 @@ class AuthenticationTest extends TestCase
             'password' => 'nagoyameshi',
         ]);
 
-        dd(Auth::guard('admin')->check());
-
         $this->assertTrue(Auth::guard('admin')->check());
         $response->assertRedirect(RouteServiceProvider::ADMIN_HOME);
     }

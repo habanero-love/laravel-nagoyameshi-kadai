@@ -16,7 +16,7 @@ class UserTest extends TestCase
 
     public function test_未ログインのユーザーは管理者側の会員一覧ページにアクセスできない()
     {
-        $response = $this->get('/admin/index');
+        $response = $this->get('/admin/users');
         $response->assertRedirect('/admin/login');
     }
 
@@ -25,7 +25,7 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $response = $this
             ->actingAs($user)
-            ->get('/admin/index');
+            ->get('/admin/users');
         $response->assertRedirect('/admin/login');
     }
 
@@ -41,13 +41,13 @@ class UserTest extends TestCase
             'password' => 'nagoyameshi',
         ]);
         $response = $this
-            ->get(route('admin.index'));
+            ->get(route('admin.users.index'));
         $response->assertStatus(200);
     }
 
     public function test_未ログインのユーザーは管理者側の会員詳細ページにアクセスできない()
     {
-        $response = $this->get('/admin/show');
+        $response = $this->get('/admin/users/{id}');
         $response->assertRedirect('/admin/login');
     }
 
@@ -56,7 +56,7 @@ class UserTest extends TestCase
         $user = User::factory()->create();
         $response = $this
             ->actingAs($user)
-            ->get('/admin/show');
+            ->get('/admin/users/{id}');
         $response->assertRedirect('/admin/login');
     }
 
@@ -72,7 +72,10 @@ class UserTest extends TestCase
             'password' => 'nagoyameshi',
         ]);
 
-        $this->assertTrue(Auth::guard('admin')->check());
-        $response->assertRedirect(RouteServiceProvider::ADMIN_HOME);
+        $user = User::factory()->create();
+
+        $response = $this
+            ->get(route('admin.users.show', ['id' => $user->id]));
+        $response->assertStatus(200);
     }
 }
