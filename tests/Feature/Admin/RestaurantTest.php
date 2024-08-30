@@ -8,7 +8,6 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\Admin;
 use App\Models\Restaurant;
-use Illuminate\Support\Facades\Hash;
 
 class RestaurantTest extends TestCase
 {
@@ -21,17 +20,17 @@ class RestaurantTest extends TestCase
     {
         parent::setUp();
 
-        // ファクトリを実行して管理者ユーザーを生成
+        // ファクトリを実行して一般ユーザーを生成
         $this->user = User::factory()->create();
-
-        // ファクトリを実行してレストランを生成
-        $this->restaurant = Restaurant::factory()->create();
 
         // シーダーを実行して管理者ユーザーを生成
         $this->seed(\Database\Seeders\AdminSeeder::class);
 
         // シーダーで作成された管理者を取得してクラスプロパティに保存
         $this->admin = Admin::where('email', 'admin@example.com')->first();
+
+        // ファクトリを実行してレストランを生成
+        $this->restaurant = Restaurant::factory()->create();
     }
 
     // indexアクション
