@@ -21,4 +21,10 @@ class Restaurant extends Model
         'closing_time',
         'seating_capacity',
     ];
+
+    // 中間テーブルとのリレーションを設定
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class, 'category_restaurant')->withTimestamps();
+    }
 }

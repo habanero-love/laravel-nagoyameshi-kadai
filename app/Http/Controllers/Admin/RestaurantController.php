@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\RestaurantRequest;
 use Illuminate\Http\Request;
 use App\Models\Restaurant;
+use App\Models\Category;
 
 class RestaurantController extends Controller
 {
@@ -16,18 +17,18 @@ class RestaurantController extends Controller
     {
         // 検索キーワードを取得
         $keyword = $request->input('keyword');
-        
+
         // restaurantsテーブルからデータを取得し、検索条件を適用
         $query = Restaurant::query();
-        
+
         if (!empty($keyword)) {
             // 部分一致検索を店舗名に適用
             $query->where('name', 'like', '%' . $keyword . '%');
         }
-        
+
         // ページネーションを適用してデータを取得
         $restaurants = $query->paginate(10); // ここで10件ずつのページネーションを設定
-        
+
         // 総数を取得
         $total = $restaurants->total();
 
@@ -40,7 +41,10 @@ class RestaurantController extends Controller
      */
     public function create()
     {
-        return view('admin.restaurants.create');
+        // categoriesテーブルのすべてのデータを取得
+        $categories = Category::all();
+
+        return view('admin.restaurants.create', compact('categories'));
     }
 
     /**
@@ -63,7 +67,11 @@ class RestaurantController extends Controller
         }
 
         // データベースに保存
-        Restaurant::create($data);
+        $restaurant = Restaurant::create($data);
+
+        // 中間テーブルにデータを追加
+        $category_ids = array_filter($request->input('category_ids'));
+        $restaurant->categories()->sync($category_ids);
 
         // フラッシュメッセージをセッションに保存し、リダイレクト
         return redirect()->route('admin.restaurants.index')->with('flash_message', '店舗を登録しました。');
@@ -74,7 +82,7 @@ class RestaurantController extends Controller
      */
     public function show(Restaurant $restaurant)
     {
-        return view('admin.restaurants.show',compact('restaurant'));
+        return view('admin.restaurants.show', compact('restaurant'));
     }
 
     /**
@@ -82,13 +90,20 @@ class RestaurantController extends Controller
      */
     public function edit(Restaurant $restaurant)
     {
-        return view('admin.restaurants.edit',compact('restaurant'));
+        // categoriesテーブルのすべてのデータを取得
+        $categories = Category::all();
+
+        // 設定されたカテゴリのIDを配列化する
+        $category_ids = $restaurant->categories->pluck('id')->toArray();
+
+
+        return view('admin.restaurants.edit', compact('restaurant', 'categories', 'category_ids'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(RestaurantRequest $request,Restaurant $restaurant)
+    public function update(RestaurantRequest $request, Restaurant $restaurant)
     {
         // リクエストデータの取得（image以外のデータ)
         $data = $request->except('image');
@@ -104,8 +119,12 @@ class RestaurantController extends Controller
         // データベースを更新
         $restaurant->update($data);
 
+        // 中間テーブルにデータを追加
+        $category_ids = array_filter($request->input('category_ids'));
+        $restaurant->categories()->sync($category_ids);
+
         // フラッシュメッセージをセッションに保存し、リダイレクト
-        return redirect()->route('admin.restaurants.show',$restaurant)->with('flash_message', '店舗を編集しました。');
+        return redirect()->route('admin.restaurants.show', $restaurant)->with('flash_message', '店舗を編集しました。');
     }
 
     /**

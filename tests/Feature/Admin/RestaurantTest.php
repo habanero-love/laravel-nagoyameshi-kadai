@@ -8,12 +8,13 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\Admin;
 use App\Models\Restaurant;
+use App\Models\Category;
 
 class RestaurantTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected $admin, $user, $restaurant;
+    protected $admin, $user, $restaurant, $category_ids;
 
     // 共通のデータ
     public function setUp(): void
@@ -28,6 +29,10 @@ class RestaurantTest extends TestCase
 
         // シーダーで作成された管理者を取得してクラスプロパティに保存
         $this->admin = Admin::where('email', 'admin@example.com')->first();
+
+        // カテゴリのダミーデータ
+        $categories = Category::factory()->count(3)->create();
+        $this->category_ids = $categories->pluck('id')->toArray();
 
         // ファクトリを実行してレストランを生成
         $this->restaurant = Restaurant::factory()->create();
@@ -102,23 +107,50 @@ class RestaurantTest extends TestCase
     // storeアクション
     public function test_未ログインのユーザーは管理者側の店舗を登録できない()
     {
-        $response = $this->post(route('admin.restaurants.store'), $this->restaurant->toArray());
+        $response = $this->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), ['category_ids' => $this->category_ids]));
 
         $response->assertRedirect(route('admin.login'));
+
+        // データベースに新しいカテゴリが登録されていないことを確認
+        foreach ($this->category_ids as $category_id) {
+            $this->assertDatabaseMissing('category_restaurant', [
+                'category_id' => $category_id,
+            ]);
+        }
     }
 
     public function test_ログイン済みの一般ユーザーは管理者側の店舗を登録できない()
     {
-        $response = $this->actingAs($this->user)->post(route('admin.restaurants.store'), $this->restaurant->toArray());
+        $response = $this->actingAs($this->user)->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), ['category_ids' => $this->category_ids]));
 
         $response->assertRedirect(route('admin.login'));
+
+        // データベースに新しいカテゴリが登録されていないことを確認
+        foreach ($this->category_ids as $category_id) {
+            $this->assertDatabaseMissing('category_restaurant', [
+                'category_id' => $category_id,
+            ]);
+        }
     }
 
     public function test_ログイン済みの管理者は管理者側の店舗を登録できる()
     {
-        $response = $this->actingAs($this->admin, 'admin')->post(route('admin.restaurants.store'), $this->restaurant->toArray());
+        // 新しいレストランのデータを用意し、カテゴリIDを追加
+        $response = $this->actingAs($this->admin, 'admin')->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), ['category_ids' => $this->category_ids]));
 
+        // レスポンスが店舗一覧ページにリダイレクトすることを確認
         $response->assertRedirect(route('admin.restaurants.index'));
+
+        // 新しく作成されたレストランのIDを取得
+        $restaurant_id = Restaurant::latest('id')->first()->id;
+
+        // 各カテゴリが正しいレストランIDで登録されているかを確認
+        foreach ($this->category_ids as $category_id) {
+            $this->assertDatabaseHas('category_restaurant', [
+                'category_id' => $category_id,
+                'restaurant_id' => $restaurant_id,
+            ]);
+        }
     }
 
     // editアクション
@@ -146,29 +178,74 @@ class RestaurantTest extends TestCase
     // updateアクション
     public function test_未ログインのユーザーは管理者側の店舗を更新できない()
     {
-        $response = $this->put(route('admin.restaurants.update', $this->restaurant), [
+        $restaurant_data = [
+            'name' => '更新成功！',
+            'category_ids' => $this->category_ids,
+        ];
+
+        $response = $this->put(route('admin.restaurants.update', $this->restaurant), $restaurant_data);
+
+        $response->assertRedirect(route('admin.login'));
+
+        $this->assertDatabaseMissing('restaurants', [
+            'id' => $this->restaurant->id,
             'name' => '更新成功！',
         ]);
 
-        $response->assertRedirect(route('admin.login'));
+        foreach ($this->category_ids as $category_id) {
+            $this->assertDatabaseMissing('category_restaurant', [
+                'category_id' => $category_id,
+                'restaurant_id' => $this->restaurant->id,
+            ]);
+        }
     }
 
     public function test_ログイン済みの一般ユーザーは管理者側の店舗を更新できない()
     {
-        $response = $this->actingAs($this->user)->put(route('admin.restaurants.update', $this->restaurant), [
+        $restaurant_data = [
+            'name' => '更新成功！',
+            'category_ids' => $this->category_ids,
+        ];
+
+        $response = $this->actingAs($this->user)->put(route('admin.restaurants.update', $this->restaurant), $restaurant_data);
+
+        $response->assertRedirect(route('admin.login'));
+
+        $this->assertDatabaseMissing('restaurants', [
+            'id' => $this->restaurant->id,
             'name' => '更新成功！',
         ]);
 
-        $response->assertRedirect(route('admin.login'));
+        foreach ($this->category_ids as $category_id) {
+            $this->assertDatabaseMissing('category_restaurant', [
+                'category_id' => $category_id,
+                'restaurant_id' => $this->restaurant->id,
+            ]);
+        }
     }
 
     public function test_ログイン済みの管理者は管理者側の店舗を更新できる()
     {
-        $response = $this->actingAs($this->admin, 'admin')->put(route('admin.restaurants.update', $this->restaurant), [
+        $restaurant_data = [
+            'name' => '更新成功！',
+            'category_ids' => $this->category_ids,
+        ];
+
+        $response = $this->actingAs($this->admin, 'admin')->put(route('admin.restaurants.update', $this->restaurant), $restaurant_data);
+
+        $response->assertRedirect(route('admin.restaurants.show', $this->restaurant));
+
+        $this->assertDatabaseHas('restaurants', [
+            'id' => $this->restaurant->id,
             'name' => '更新成功！',
         ]);
 
-        $response->assertRedirect(route('admin.restaurants.show', $this->restaurant));
+        foreach ($this->category_ids as $category_id) {
+            $this->assertDatabaseHas('category_restaurant', [
+                'category_id' => $category_id,
+                'restaurant_id' => $this->restaurant->id,
+            ]);
+        }
     }
 
     // destroyアクション
