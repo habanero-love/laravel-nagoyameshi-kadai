@@ -9,12 +9,13 @@ use App\Models\User;
 use App\Models\Admin;
 use App\Models\Restaurant;
 use App\Models\Category;
+use App\Models\RegularHoliday;
 
 class RestaurantTest extends TestCase
 {
     use RefreshDatabase;
 
-    protected $admin, $user, $restaurant, $category_ids;
+    protected $admin, $user, $restaurant, $category_ids, $regular_holiday_ids, $restaurant_data;
 
     // 共通のデータ
     public function setUp(): void
@@ -31,11 +32,20 @@ class RestaurantTest extends TestCase
         $this->admin = Admin::where('email', 'admin@example.com')->first();
 
         // カテゴリのダミーデータ
-        $categories = Category::factory()->count(3)->create();
-        $this->category_ids = $categories->pluck('id')->toArray();
+        $this->category_ids = Category::factory()->count(3)->create()->pluck('id')->toArray();
+
+        // 定休日のダミーデータ
+        $this->regular_holiday_ids = RegularHoliday::factory()->count(3)->create()->pluck('id')->toArray();
 
         // ファクトリを実行してレストランを生成
         $this->restaurant = Restaurant::factory()->create();
+
+        // レストランの更新ダミーデータ
+        $this->restaurant_data = [
+            'name' => '更新成功！',
+            'category_ids' => $this->category_ids,
+            'regular_holiday_ids' => $this->regular_holiday_ids,
+        ];
     }
 
     // indexアクション
@@ -105,38 +115,55 @@ class RestaurantTest extends TestCase
     }
 
     // storeアクション
-    public function test_未ログインのユーザーは管理者側の店舗を登録できない()
+    // 共通処理
+    private function test_データベースが変更されていないか確認する()
     {
-        $response = $this->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), ['category_ids' => $this->category_ids]));
-
-        $response->assertRedirect(route('admin.login'));
-
         // データベースに新しいカテゴリが登録されていないことを確認
         foreach ($this->category_ids as $category_id) {
             $this->assertDatabaseMissing('category_restaurant', [
                 'category_id' => $category_id,
             ]);
         }
+
+        // データベースに新しい定休日が登録されていないことを確認
+        foreach ($this->regular_holiday_ids as $regular_holiday_id) {
+            $this->assertDatabaseMissing('regular_holiday_restaurant', [
+                'regular_holiday_id' => $regular_holiday_id,
+            ]);
+        }
+    }
+
+    public function test_未ログインのユーザーは管理者側の店舗を登録できない()
+    {
+        $response = $this->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), [
+            'category_ids' => $this->category_ids,
+            'regular_holiday_ids' => $this->regular_holiday_ids,
+        ]));
+
+        $response->assertRedirect(route('admin.login'));
+
+        $this->test_データベースが変更されていないか確認する();
     }
 
     public function test_ログイン済みの一般ユーザーは管理者側の店舗を登録できない()
     {
-        $response = $this->actingAs($this->user)->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), ['category_ids' => $this->category_ids]));
+        $response = $this->actingAs($this->user)->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), [
+            'category_ids' => $this->category_ids,
+            'regular_holiday_ids' => $this->regular_holiday_ids,
+        ]));
 
         $response->assertRedirect(route('admin.login'));
 
-        // データベースに新しいカテゴリが登録されていないことを確認
-        foreach ($this->category_ids as $category_id) {
-            $this->assertDatabaseMissing('category_restaurant', [
-                'category_id' => $category_id,
-            ]);
-        }
+        $this->test_データベースが変更されていないか確認する();
     }
 
     public function test_ログイン済みの管理者は管理者側の店舗を登録できる()
     {
-        // 新しいレストランのデータを用意し、カテゴリIDを追加
-        $response = $this->actingAs($this->admin, 'admin')->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), ['category_ids' => $this->category_ids]));
+        // 新しいレストランのデータを用意し、カテゴリID・定休日を追加
+        $response = $this->actingAs($this->admin, 'admin')->post(route('admin.restaurants.store'), array_merge($this->restaurant->toArray(), [
+            'category_ids' => $this->category_ids,
+            'regular_holiday_ids' => $this->regular_holiday_ids,
+        ]));
 
         // レスポンスが店舗一覧ページにリダイレクトすることを確認
         $response->assertRedirect(route('admin.restaurants.index'));
@@ -148,6 +175,14 @@ class RestaurantTest extends TestCase
         foreach ($this->category_ids as $category_id) {
             $this->assertDatabaseHas('category_restaurant', [
                 'category_id' => $category_id,
+                'restaurant_id' => $restaurant_id,
+            ]);
+        }
+
+        // 定休日が正しいレストランIDで登録されているかを確認
+        foreach ($this->regular_holiday_ids as $regular_holiday_id) {
+            $this->assertDatabaseHas('regular_holiday_restaurant', [
+                'regular_holiday_id' => $regular_holiday_id,
                 'restaurant_id' => $restaurant_id,
             ]);
         }
@@ -178,71 +213,38 @@ class RestaurantTest extends TestCase
     // updateアクション
     public function test_未ログインのユーザーは管理者側の店舗を更新できない()
     {
-        $restaurant_data = [
-            'name' => '更新成功！',
-            'category_ids' => $this->category_ids,
-        ];
-
-        $response = $this->put(route('admin.restaurants.update', $this->restaurant), $restaurant_data);
+        $response = $this->put(route('admin.restaurants.update', $this->restaurant), $this->restaurant_data);
 
         $response->assertRedirect(route('admin.login'));
 
-        $this->assertDatabaseMissing('restaurants', [
-            'id' => $this->restaurant->id,
-            'name' => '更新成功！',
-        ]);
-
-        foreach ($this->category_ids as $category_id) {
-            $this->assertDatabaseMissing('category_restaurant', [
-                'category_id' => $category_id,
-                'restaurant_id' => $this->restaurant->id,
-            ]);
-        }
+        $this->test_データベースが変更されていないか確認する();
     }
 
     public function test_ログイン済みの一般ユーザーは管理者側の店舗を更新できない()
     {
-        $restaurant_data = [
-            'name' => '更新成功！',
-            'category_ids' => $this->category_ids,
-        ];
-
-        $response = $this->actingAs($this->user)->put(route('admin.restaurants.update', $this->restaurant), $restaurant_data);
+        $response = $this->actingAs($this->user)->put(route('admin.restaurants.update', $this->restaurant), $this->restaurant_data);
 
         $response->assertRedirect(route('admin.login'));
 
-        $this->assertDatabaseMissing('restaurants', [
-            'id' => $this->restaurant->id,
-            'name' => '更新成功！',
-        ]);
-
-        foreach ($this->category_ids as $category_id) {
-            $this->assertDatabaseMissing('category_restaurant', [
-                'category_id' => $category_id,
-                'restaurant_id' => $this->restaurant->id,
-            ]);
-        }
+        $this->test_データベースが変更されていないか確認する();
     }
 
     public function test_ログイン済みの管理者は管理者側の店舗を更新できる()
     {
-        $restaurant_data = [
-            'name' => '更新成功！',
-            'category_ids' => $this->category_ids,
-        ];
-
-        $response = $this->actingAs($this->admin, 'admin')->put(route('admin.restaurants.update', $this->restaurant), $restaurant_data);
+        $response = $this->actingAs($this->admin, 'admin')->put(route('admin.restaurants.update', $this->restaurant), $this->restaurant_data);
 
         $response->assertRedirect(route('admin.restaurants.show', $this->restaurant));
-
-        $this->assertDatabaseHas('restaurants', [
-            'id' => $this->restaurant->id,
-            'name' => '更新成功！',
-        ]);
 
         foreach ($this->category_ids as $category_id) {
             $this->assertDatabaseHas('category_restaurant', [
                 'category_id' => $category_id,
+                'restaurant_id' => $this->restaurant->id,
+            ]);
+        }
+
+        foreach ($this->regular_holiday_ids as $regular_holiday_id) {
+            $this->assertDatabaseHas('regular_holiday_restaurant', [
+                'regular_holiday_id' => $regular_holiday_id,
                 'restaurant_id' => $this->restaurant->id,
             ]);
         }

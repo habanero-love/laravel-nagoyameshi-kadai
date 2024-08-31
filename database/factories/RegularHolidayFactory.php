@@ -2,26 +2,25 @@
 
 namespace Database\Factories;
 
+use App\Models\RegularHoliday;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use App\Models\Category;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Category>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\RegularHoliday>
  */
-class CategoryFactory extends Factory
+class RegularHolidayFactory extends Factory
 {
     /**
      * Define the model's default state.
      *
      * @return array<string, mixed>
      */
-
-    protected $model = Category::class;
+    protected $model = RegularHoliday::class;
 
     public function definition(): array
     {
         return [
-            'name' => fake()->dayOfWeek(),
+            'day' => 'テスト',
         ];
     }
 }
