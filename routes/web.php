@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\RestaurantController;
+use App\Http\Controllers\Admin\CompanyController;
+use App\Http\Controllers\Admin\TermController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,4 +31,7 @@ Route::group(['prefix' => '/admin', 'as' => 'admin.', 'middleware' => 'auth:admi
 
     Route::resource('restaurants', RestaurantController::class);
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
+
+    Route::resource('company', CompanyController::class)->only(['index', 'edit','update']);
+    Route::resource('terms', TermController::class)->only(['index', 'edit','update']);
 });
