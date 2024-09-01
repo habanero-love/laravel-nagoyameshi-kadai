@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\RestaurantController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\TermController;
+use App\Http\Controllers\HomeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,6 +33,10 @@ Route::group(['prefix' => '/admin', 'as' => 'admin.', 'middleware' => 'auth:admi
     Route::resource('restaurants', RestaurantController::class);
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
 
-    Route::resource('company', CompanyController::class)->only(['index', 'edit','update']);
-    Route::resource('terms', TermController::class)->only(['index', 'edit','update']);
+    Route::resource('company', CompanyController::class)->only(['index', 'edit', 'update']);
+    Route::resource('terms', TermController::class)->only(['index', 'edit', 'update']);
+});
+
+Route::group(['middleware' => 'guest:admin'], function () {
+    Route::get('/home', [HomeController::class, 'index'])->name('home');
 });
