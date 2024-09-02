@@ -45,7 +45,7 @@ Route::group(['prefix' => '/admin', 'as' => 'admin.', 'middleware' => 'auth:admi
 // 管理者以外
 Route::group(['middleware' => 'guest:admin'], function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
-    Route::resource('restaurants', RestaurantController::class)->only(['index']);
+    Route::resource('restaurants', RestaurantController::class)->only(['index','show']);
 });
 
 // 一般会員のみ
