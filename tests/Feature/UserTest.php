@@ -33,6 +33,7 @@ class UserTest extends TestCase
             'name' => '編集成功！'
         ];
     }
+    
     // indexアクション
     public function test_未ログインのユーザーは会員側の会員情報ページにアクセスできない()
     {

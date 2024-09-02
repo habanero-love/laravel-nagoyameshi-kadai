@@ -3,11 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Admin\CategoryController;
-use App\Http\Controllers\Admin\RestaurantController;
+use App\Http\Controllers\Admin\RestaurantController as AdminRestaurantController;
 use App\Http\Controllers\Admin\CompanyController;
 use App\Http\Controllers\Admin\TermController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\RestaurantController;
 use App\Http\Controllers\UserController;
 
 /*
@@ -22,7 +23,8 @@ use App\Http\Controllers\UserController;
 */
 
 Route::get('/', function () {
-    return view('welcome');
+    // return view('welcome');
+    return redirect('/home');
 });
 
 require __DIR__ . '/auth.php';
@@ -33,7 +35,7 @@ Route::group(['prefix' => '/admin', 'as' => 'admin.', 'middleware' => 'auth:admi
     Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
     Route::get('/users/{id}', [AdminUserController::class, 'show'])->name('users.show');
 
-    Route::resource('restaurants', RestaurantController::class);
+    Route::resource('restaurants', AdminRestaurantController::class);
     Route::resource('categories', CategoryController::class)->except(['create', 'show', 'edit']);
 
     Route::resource('company', CompanyController::class)->only(['index', 'edit', 'update']);
@@ -43,6 +45,7 @@ Route::group(['prefix' => '/admin', 'as' => 'admin.', 'middleware' => 'auth:admi
 // 管理者以外
 Route::group(['middleware' => 'guest:admin'], function () {
     Route::get('/home', [HomeController::class, 'index'])->name('home');
+    Route::resource('restaurants', RestaurantController::class)->only(['index']);
 });
 
 // 一般会員のみ
