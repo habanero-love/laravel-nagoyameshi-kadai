@@ -64,7 +64,7 @@ Route::group(['middleware' => ['guest:admin', 'auth', 'verified']], function () 
     // 有料プランに登録済み
     Route::group(['middleware' => Subscribed::class, 'prefix' => 'subscription', 'as' => 'subscription.'], function () {
         Route::get('/edit', [SubscriptionController::class, 'edit'])->name('edit');
-        Route::put('/', [SubscriptionController::class, 'update'])->name('update');
+        Route::match(['put', 'patch'], '/', [SubscriptionController::class, 'update'])->name('update');
         Route::get('/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
         Route::delete('/', [SubscriptionController::class, 'destroy'])->name('destroy');
     });

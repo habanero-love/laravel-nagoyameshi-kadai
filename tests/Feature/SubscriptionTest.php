@@ -126,97 +126,104 @@ class SubscriptionTest extends TestCase
         $response->assertRedirect(route('admin.home'));
     }
 
-    // // updateアクション
-    // public function test_未ログインのユーザーは管理者側の店舗を更新できない()
-    // {
-    //     $response = $this->put(route('subscription.update', $this->restaurant), $this->restaurant_data);
+    // updateアクション
+    public function test_未ログインのユーザーはお支払い方法を更新できない()
+    {
+        $response = $this->put(route('subscription.update'));
 
-    //     $response->assertRedirect(route('login'));
+        $response->assertRedirect(route('login'));
+    }
 
-    //     $this->test_データベースが変更されていないか確認する();
-    // }
+    public function test_ログイン済みの無料会員はお支払い方法を更新できない()
+    {
+        $response = $this->actingAs($this->user)->put(route('subscription.update'));
 
-    // public function test_ログイン済みの一般ユーザーは管理者側の店舗を更新できない()
-    // {
-    //     $response = $this->actingAs($this->user)->put(route('subscription.update', $this->restaurant), $this->restaurant_data);
+        $response->assertRedirect(route('subscription.create'));
+    }
 
-    //     $response->assertRedirect(route('login'));
+    public function test_ログイン済みの有料会員はお支払い方法を更新できる()
+    {
+        $request_parameter = [
+            'paymentMethodId' => 'pm_card_mastercard'
+        ];
 
-    //     $this->test_データベースが変更されていないか確認する();
-    // }
+        $default_payment_method_id = $this->user_subscription->defaultPaymentMethod()->id;
 
-    // public function test_ログイン済みの管理者は管理者側の店舗を更新できる()
-    // {
-    //     $response = $this->actingAs($this->admin, 'admin')->put(route('subscription.update', $this->restaurant), $this->restaurant_data);
+        $response = $this->actingAs($this->user_subscription)->put(route('subscription.update'), $request_parameter);
 
-    //     $response->assertRedirect(route('subscription.show', $this->restaurant));
+        $response->assertRedirect(route('home'));
 
-    //     foreach ($this->category_ids as $category_id) {
-    //         $this->assertDatabaseHas('category_restaurant', [
-    //             'category_id' => $category_id,
-    //             'restaurant_id' => $this->restaurant->id,
-    //         ]);
-    //     }
+        $update_payment_method_id = $this->user_subscription->defaultPaymentMethod()->id;
 
-    //     foreach ($this->regular_holiday_ids as $regular_holiday_id) {
-    //         $this->assertDatabaseHas('regular_holiday_restaurant', [
-    //             'regular_holiday_id' => $regular_holiday_id,
-    //             'restaurant_id' => $this->restaurant->id,
-    //         ]);
-    //     }
-    // }
+        $this->assertNotSame($default_payment_method_id, $update_payment_method_id);
+    }
 
-    // // cancelアクション
-    // public function test_未ログインのユーザーは管理者側の店舗を削除できない()
-    // {
-    //     $response = $this->delete(route('subscription.destroy', $this->restaurant));
+    public function test_ログイン済みの管理者はお支払い方法を更新できない()
+    {
+        $response = $this->actingAs($this->admin, 'admin')->put(route('subscription.update'));
 
-    //     $response->assertRedirect(route('login'));
+        $response->assertRedirect(route('admin.home'));
+    }
 
-    //     $this->assertModelExists($this->restaurant);
-    // }
+    // cancelアクション
+    public function test_未ログインのユーザーは有料プラン解約ページにアクセスできない()
+    {
+        $response = $this->get(route('subscription.cancel'));
 
-    // public function test_ログイン済みの一般ユーザーは管理者側の店舗を削除できない()
-    // {
-    //     $response = $this->actingAs($this->user)->delete(route('subscription.destroy', $this->restaurant));
+        $response->assertRedirect(route('login'));
+    }
 
-    //     $response->assertRedirect(route('login'));
+    public function test_ログイン済みの無料会員は有料プラン解約ページにアクセスできない()
+    {
+        $response = $this->actingAs($this->user)->get(route('subscription.cancel'));
 
-    //     $this->assertModelExists($this->restaurant);
-    // }
+        $response->assertRedirect(route('subscription.create'));
+    }
 
-    // public function test_ログイン済みの管理者は管理者側の店舗を削除できる()
-    // {
-    //     $response = $this->actingAs($this->admin, 'admin')->delete(route('subscription.destroy', $this->restaurant));
+    public function test_ログイン済みの有料会員は有料プラン解約ページにアクセスできる()
+    {
 
-    //     $response->assertRedirect(route('subscription.index'));
-    //     $this->assertModelMissing($this->restaurant);
-    // }
+        $response = $this->actingAs($this->user_subscription)->get(route('subscription.cancel'));
 
-    // // destroyアクション
-    // public function test_未ログインのユーザーは管理者側の店舗を削除できない()
-    // {
-    //     $response = $this->delete(route('subscription.destroy', $this->restaurant));
+        $response->assertStatus(200);
+    }
 
-    //     $response->assertRedirect(route('login'));
+    public function test_ログイン済みの管理者は有料プラン解約ページにアクセスできない()
+    {
+        $response = $this->actingAs($this->admin, 'admin')->get(route('subscription.cancel'));
 
-    //     $this->assertModelExists($this->restaurant);
-    // }
+        $response->assertRedirect(route('admin.home'));
+    }
 
-    // public function test_ログイン済みの一般ユーザーは管理者側の店舗を削除できない()
-    // {
-    //     $response = $this->actingAs($this->user)->delete(route('subscription.destroy', $this->restaurant));
+    // destroyアクション
+    public function test_未ログインのユーザーは有料プランを解約できない()
+    {
+        $response = $this->delete(route('subscription.destroy'));
 
-    //     $response->assertRedirect(route('login'));
+        $response->assertRedirect(route('login'));
+    }
 
-    //     $this->assertModelExists($this->restaurant);
-    // }
+    public function test_ログイン済みの無料会員は有料プランを解約できない()
+    {
+        $response = $this->actingAs($this->user)->delete(route('subscription.destroy'));
 
-    // public function test_ログイン済みの管理者は管理者側の店舗を削除できる()
-    // {
-    //     $response = $this->actingAs($this->admin, 'admin')->delete(route('subscription.destroy', $this->restaurant));
+        $response->assertRedirect(route('subscription.create'));
+    }
 
-    //     $response->assertRedirect(route('subscription.index'));
-    //     $this->assertModelMissing($this->restaurant);
-    // }
+    public function test_ログイン済みの有料会員は有料プランを解約できる()
+    {
+
+        $response = $this->actingAs($this->user_subscription)->delete(route('subscription.destroy'));
+
+        $response->assertRedirect(route('home'));
+
+        $this->assertFalse($this->user_subscription->subscribed('premium_plan'));
+    }
+
+    public function test_ログイン済みの管理者は有料プランを解約できない()
+    {
+        $response = $this->actingAs($this->admin, 'admin')->delete(route('subscription.destroy'));
+
+        $response->assertRedirect(route('admin.home'));
+    }
 }
