@@ -42,9 +42,9 @@ class RestaurantController extends Controller
 
         // 並び替えの準備
         if ($request->has('select_sort')) {
-            $slices = explode(' ', $request->input('select_sort'));
-            $sort_query[$slices[0]] = $slices[1];
-            $sorted = $request->input('select_sort');
+            $slices = explode(' ', $request->input('select_sort')); // 配列に分ける
+            $sort_query[$slices[0]] = $slices[1]; // $f["key"] = value は $f=[key => "value"]になる。配列にキーを指定して追加できる
+            $sorted = $request->input('select_sort'); // 配列を受け取る
         }
 
         // 並べ替えとページネーションの適用
