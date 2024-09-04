@@ -23,7 +23,7 @@ class Restaurant extends Model
         'seating_capacity',
     ];
 
-    // 中間テーブルとのリレーションを設定
+    // リレーションを設定
     public function categories()
     {
         return $this->belongsToMany(Category::class, 'category_restaurant')->withTimestamps();
@@ -32,4 +32,14 @@ class Restaurant extends Model
     {
         return $this->belongsToMany(RegularHoliday::class, 'regular_holiday_restaurant')->withTimestamps();
     }
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    // 独自の並べ替え機能を設定（リレーション先のカラム使用のため）
+    public function ratingSortable($query, $direction) {
+        return $query->withAvg('reviews', 'score')->orderBy('reviews_avg_score', $direction);
+    }
+    
 }
