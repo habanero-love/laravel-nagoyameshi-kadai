@@ -60,7 +60,7 @@ class ReservationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_管理者は会員側の予約一覧ページにアクセスできない()
+    public function test_ログイン済みの管理者は会員側の予約一覧ページにアクセスできない()
     {
         $response = $this->actingAs($this->admin, 'admin')->get(route('reservations.index'));
         $response->assertRedirect(route('admin.home'));
@@ -85,7 +85,7 @@ class ReservationTest extends TestCase
         $response->assertStatus(200);
     }
 
-    public function test_管理者は予約ページにアクセスできない()
+    public function test_ログイン済みの管理者は予約ページにアクセスできない()
     {
         $response = $this->actingAs($this->admin, 'admin')->get(route('restaurants.reservations.create', [$this->restaurant, $this->reservation]));
         $response->assertRedirect(route('admin.home'));
@@ -116,7 +116,7 @@ class ReservationTest extends TestCase
         ]);
     }
 
-    public function test_管理者は予約できない()
+    public function test_ログイン済みの管理者は予約できない()
     {
         $response = $this->actingAs($this->admin, 'admin')->post(route('restaurants.reservations.store', [$this->restaurant, $this->reservation]), $this->reservation->toArray());
         $response->assertRedirect(route('admin.home'));
@@ -151,7 +151,7 @@ class ReservationTest extends TestCase
         $this->assertDatabaseMissing('reservations', ['id' => $this->reservation->id]);
     }
 
-    public function test_管理者は予約をキャンセルできない()
+    public function test_ログイン済みの管理者は予約をキャンセルできない()
     {
         $response = $this->actingAs($this->admin, 'admin')->delete(route('reservations.destroy', $this->reservation));
         $response->assertRedirect(route('admin.home'));
