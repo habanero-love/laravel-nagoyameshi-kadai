@@ -36,10 +36,17 @@ class Restaurant extends Model
     {
         return $this->hasMany(Review::class);
     }
+    public function reservations()
+    {
+        return $this->hasMany(Reservation::class);
+    }
 
     // 独自の並べ替え機能を設定（リレーション先のカラム使用のため）
     public function ratingSortable($query, $direction) {
         return $query->withAvg('reviews', 'score')->orderBy('reviews_avg_score', $direction);
     }
     
+    public function popularSortable($query) {
+        return $query->withCount('reservations')->orderBy('reservations_count', 'desc');
+    }
 }
