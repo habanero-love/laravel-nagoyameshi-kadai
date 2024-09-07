@@ -17,10 +17,6 @@ use App\Http\Middleware\Subscribed;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
 require __DIR__ . '/auth.php';
 
 // 管理者のみ
